@@ -40,8 +40,19 @@ memdash::memgraph_disconnect()
 
 ## Card types
 
-`metric`, `table` (DT), `graph`, `bar` / `line` / `pie` (plotly),
+`metric`, `table` (DT), `graph`, `scatter`, `bar` / `line` / `pie` (plotly),
 `text` (Markdown), `json`. See `default_cards()` for example Cypher per type.
+
+`scatter` cards render an interactive plotly scatter/marker plot. Aesthetics are
+mapped per card via the `scatter` field (`x`, `y`, `colour`, `shape`, `size`,
+`text` — query column names; blank `x`/`y` default to the first/second column,
+blank others to none):
+
+```r
+new_card(type = "scatter", title = "Requests vs latency",
+         cypher = "MATCH (m:Metric) RETURN m.hour AS h, m.latency AS lat, m.requests AS req",
+         scatter = list(x = "h", y = "lat", colour = "req", text = "h"))
+```
 
 Graph cards support multiple layouts via the card's `layout` field:
 `auto` (interactive visNetwork forceAtlas2), or a tidygraph/igraph algorithm

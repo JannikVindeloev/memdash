@@ -6,20 +6,24 @@ new_card(id = NULL, title = "New card", type = c("table", CARD_TYPES),
   cypher = "MATCH (n) RETURN count(n) AS nodes", params = list(),
   refresh = 0, width = c("half", "full"),
   layout = c("auto", "fr", "kk", "drl", "graphopt", "mds", "circle", "grid",
-    "star", "sugiyama", "ggraph"))
+    "star", "sugiyama", "ggraph"),
+  scatter = list(x = "", y = "", colour = "", shape = "", size = "", text = ""))
 }
 \arguments{
 \item{id}{Card id (generated when \code{NULL}). Must be unique per dashboard.}
 \item{title}{Card title shown in the header.}
-\item{type}{One of \code{"metric"}, \code{"table"}, \code{"graph"}, \code{"bar"},
-\code{"line"}, \code{"pie"}, \code{"text"}, \code{"json"}.}
+\item{type}{One of \code{"metric"}, \code{"table"}, \code{"graph"}, \code{"scatter"},
+\code{"bar"}, \code{"line"}, \code{"pie"}, \code{"text"}, \code{"json"}.}
 \item{cypher}{openCypher query. \code{$param} placeholders are filled from \code{params}.}
 \item{params}{Named list of parameter values, e.g. \code{list(limit = "25")}.}
 \item{refresh}{Auto-refresh interval in seconds (\code{0} = off).}
 \item{width}{\code{"half"} or \code{"full"} column width.}
 \item{layout}{Graph layout for \code{type = "graph"} cards: \code{"auto"}
-(visNetwork forceAtlas2), an igraph layout name rendered as fixed positions, or
+(visNetwork forceAtlas2), a tidygraph layout name rendered as fixed positions, or
 \code{"ggraph"} for a static tidygraph/ggraph plot. See \link{graph_layouts}.}
+\item{scatter}{Named list mapping scatter-card columns to aesthetics:
+\code{list(x, y, colour, shape, size, text)}; blank = auto (first/second column)
+or none.}
 }
 \value{
 A card definition (list).

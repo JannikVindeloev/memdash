@@ -16,6 +16,7 @@ card_body_ui <- function(card) {
     } else {
       visNetwork::visNetworkOutput(card_output_id(paste0(card$id, "_net")), height = "320px")
     },
+    scatter = plotly::plotlyOutput(card_output_id(paste0(card$id, "_plt")), height = "300px"),
     bar = plotly::plotlyOutput(card_output_id(paste0(card$id, "_plt")), height = "300px"),
     line = plotly::plotlyOutput(card_output_id(paste0(card$id, "_plt")), height = "300px"),
     pie = plotly::plotlyOutput(card_output_id(paste0(card$id, "_plt")), height = "300px"),
@@ -154,6 +155,30 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
           }
         })
       }
+      if (card$type == "scatter") {
+        output[[card_output_id(paste0(card$id, "_plt"))]] <- plotly::renderPlotly({
+          res <- values$results[[card$id]]
+          shiny::req(res)
+          df <- records_to_df(res$records, res$fields)
+          if (nrow(df) == 0 || ncol(df) < 2) return(NULL)
+          pick <- function(v) if (is.null(v) || !nzchar(v)) "" else v
+          col <- function(name) if (nzchar(name) && name %in% names(df)) df[[name]] else NULL
+          sc <- card$scatter %||% list()
+          x <- col(pick(sc$x) %||% "") %||% df[[1]]
+          y <- col(pick(sc$y) %||% "") %||% df[[2]]
+          if (is.null(x) || is.null(y)) return(NULL)
+          colour <- col(pick(sc$colour))
+          shape <- col(pick(sc$shape))
+          size <- suppressWarnings(as.numeric(col(pick(sc$size))))
+          text <- col(pick(sc$text))
+          p <- plotly::plot_ly(x = x, y = y, type = "scatter", mode = "markers",
+                               text = text, hoverinfo = "text+x+y")
+          if (!is.null(colour)) p <- plotly::add_markers(p, color = colour)
+          if (!is.null(shape)) p <- plotly::add_markers(p, symbol = shape)
+          if (!is.null(size)) p <- plotly::add_markers(p, size = size)
+          p %>% plotly::layout(xaxis = list(title = names(df)[1]), yaxis = list(title = names(df)[2]))
+        })
+      }
       if (card$type %in% c("bar", "line", "pie")) {
         output[[card_output_id(paste0(card$id, "_plt"))]] <- plotly::renderPlotly({
           res <- values$results[[card$id]]
@@ -211,6 +236,17 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
             shiny::updateNumericInput(session, "edit_refresh", value = card_now$refresh %||% 0)
             shiny::updateSelectInput(session, "edit_width", selected = card_now$width %||% "half")
             shiny::updateSelectInput(session, "edit_layout", selected = card_now$layout %||% "auto")
+            fields <- if (!is.null(values$results[[card_id]]) && !is.null(values$results[[card_id]]$fields)) values$results[[card_id]]$fields else character(0)
+            choices <- c("auto", fields)
+            none_choices <- c("none", fields)
+            sc <- card_now$scatter %||% list()
+            sel <- function(key, ch) if (nzchar(sc[[key]] %||% "")) sc[[key]] else if (key %in% c("x", "y")) "auto" else "none"
+            shiny::updateSelectInput(session, "edit_scatter_x", choices = choices, selected = sel("x", choices))
+            shiny::updateSelectInput(session, "edit_scatter_y", choices = choices, selected = sel("y", choices))
+            shiny::updateSelectInput(session, "edit_scatter_colour", choices = none_choices, selected = sel("colour", none_choices))
+            shiny::updateSelectInput(session, "edit_scatter_shape", choices = none_choices, selected = sel("shape", none_choices))
+            shiny::updateSelectInput(session, "edit_scatter_size", choices = none_choices, selected = sel("size", none_choices))
+            shiny::updateSelectInput(session, "edit_scatter_text", choices = none_choices, selected = sel("text", none_choices))
             shiny::showModal(card_editor_modal())
           })
         }
@@ -297,6 +333,18 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
         shiny::numericInput("edit_refresh", "Auto-refresh (seconds, 0 = off)", value = 0, min = 0),
         shiny::selectInput("edit_width", "Width", choices = c(half = "half", full = "full")),
         shiny::selectInput("edit_layout", "Graph layout (graph cards only)", choices = GRAPH_LAYOUTS),
+        shiny::tags$hr(),
+        shiny::tags$div(class = "fw-bold", "Scatter aesthetics (scatter cards only; column names, blank = auto/none)"),
+        shiny::fluidRow(
+          shiny::column(4, shiny::selectInput("edit_scatter_x", "x", choices = "auto")),
+          shiny::column(4, shiny::selectInput("edit_scatter_y", "y", choices = "auto")),
+          shiny::column(4, shiny::selectInput("edit_scatter_colour", "colour", choices = "none"))
+        ),
+        shiny::fluidRow(
+          shiny::column(4, shiny::selectInput("edit_scatter_shape", "shape", choices = "none")),
+          shiny::column(4, shiny::selectInput("edit_scatter_size", "size", choices = "none")),
+          shiny::column(4, shiny::selectInput("edit_scatter_text", "hover text", choices = "none"))
+        ),
         footer = shiny::tagList(
           shiny::actionButton("edit_delete", "Delete", class = "btn-danger"),
           shiny::actionButton("edit_save", "Save", class = "btn-primary"),
@@ -317,6 +365,15 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
       card$refresh <- input$edit_refresh
       card$width <- input$edit_width
       card$layout <- input$edit_layout
+      empty_to_blank <- function(v) if (identical(v, "auto") || identical(v, "none")) "" else v
+      card$scatter <- list(
+        x = empty_to_blank(input$edit_scatter_x),
+        y = empty_to_blank(input$edit_scatter_y),
+        colour = empty_to_blank(input$edit_scatter_colour),
+        shape = empty_to_blank(input$edit_scatter_shape),
+        size = empty_to_blank(input$edit_scatter_size),
+        text = empty_to_blank(input$edit_scatter_text)
+      )
       values$cards[[idx]] <- card
       register_card(card, force = TRUE)
       values$results[[id]] <- run_card_query(card)

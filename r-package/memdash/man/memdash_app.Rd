@@ -30,9 +30,10 @@ The builder UI has a connection bar (Bolt URI, credentials, Connect, Load demo
 data), dashboard controls (Add card, Save dashboard JSON, Load JSON, Run all,
 global refresh), and a responsive card grid. Each card has a Run button, a gear
 button opening an edit modal (title, visualization type, Cypher, $parameters,
-per-card refresh, width), and renders as metric, DT table, visNetwork graph,
-plotly bar/line/pie chart, Markdown text or raw JSON. Errors are shown inside
-the card.
+per-card refresh, width, graph layout, scatter aesthetics), and renders as
+metric, DT table, visNetwork graph (auto/tidygraph-fixed/ggraph layouts),
+plotly scatter (x, y, colour, shape, size, hover text) or bar/line/pie chart,
+Markdown text or raw JSON. Errors are shown inside the card.
 }
 \examples{
 \dontrun{

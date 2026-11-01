@@ -1,4 +1,6 @@
-CARD_TYPES <- c("metric", "table", "graph", "bar", "line", "pie", "text", "json")
+CARD_TYPES <- c("metric", "table", "graph", "scatter", "bar", "line", "pie", "text", "json")
+
+SCATTER_AES <- c("x", "y", "colour", "shape", "size", "text")
 
 GRAPH_LAYOUTS <- c(
   "auto" = "auto (visNetwork forceAtlas2)",
@@ -43,7 +45,8 @@ new_card <- function(id = NULL, title = "New card",
                      cypher = "MATCH (n) RETURN count(n) AS nodes",
                      params = list(), refresh = 0,
                      width = c("half", "full"),
-                     layout = c("auto", names(GRAPH_LAYOUTS))) {
+                     layout = c("auto", names(GRAPH_LAYOUTS)),
+                     scatter = list(x = "", y = "", colour = "", shape = "", size = "", text = "")) {
   list(
     id = id %||% new_card_id(),
     title = title,
@@ -52,7 +55,8 @@ new_card <- function(id = NULL, title = "New card",
     params = params,
     refresh = refresh,
     width = match.arg(width),
-    layout = match.arg(layout)
+    layout = match.arg(layout),
+    scatter = if (is.null(scatter)) list() else as.list(scatter)
   )
 }
 
@@ -74,7 +78,8 @@ dashboard_to_json <- function(cards, name = "memdash dashboard") {
       params = if (is.null(c$params)) list() else c$params,
       refresh = c$refresh %||% 0,
       width = c$width %||% "half",
-      layout = c$layout %||% "auto"
+      layout = c$layout %||% "auto",
+      scatter = if (is.null(c$scatter)) list() else as.list(c$scatter)
     ))
   )
 }
@@ -117,6 +122,7 @@ validate_dashboard <- function(raw) {
     if (is.null(c$refresh)) c$refresh <- 0
     if (is.null(c$width) || !(c$width %in% c("half", "full"))) c$width <- "half"
     if (is.null(c$layout) || !(c$layout %in% names(GRAPH_LAYOUTS))) c$layout <- "auto"
+    if (is.null(c$scatter)) c$scatter <- list()
     c
   })
   list(name = raw$name %||% "memdash dashboard", cards = cards)
