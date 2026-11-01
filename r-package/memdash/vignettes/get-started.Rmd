@@ -1,0 +1,74 @@
+---
+title: "Get started with memdash"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Get started with memdash}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+memdash is a Shiny dashboard for [Memgraph](https://memgraph.com). It connects
+over **Bolt** using the official Python `neo4j` driver through **reticulate**,
+so plain openCypher works unmodified.
+
+## 1. Prerequisites
+
+```{r, eval = FALSE}
+# Python driver in the reticulate Python environment
+reticulate::py_install("neo4j")
+
+# Install this package
+devtools::install("r-package/memdash")
+```
+
+Start Memgraph, e.g.:
+
+```bash
+docker run -p 7687:7687 memgraph/memgraph
+```
+
+## 2. Launch the dashboard
+
+```{r, eval = FALSE}
+memdash::run_memdash()
+```
+
+In the app: set **Bolt URI** to `bolt://localhost:7687`, press **Connect**,
+then **Load demo data** and **Run all**.
+
+## 3. Use it in code
+
+```{r, eval = FALSE}
+library(memdash)
+
+memgraph_connect("bolt://localhost:7687")
+memdash_seed_demo()
+
+# Metric
+res <- memgraph_query("MATCH (n) RETURN count(n) AS nodes")
+records_to_df(res$records, res$fields)
+
+# Graph card data
+res <- memgraph_query("MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50")
+g <- records_to_graph(res$records)
+length(g$nodes)  # visNetwork-ready nodes
+length(g$edges)  # visNetwork-ready edges
+
+# Parameters ($limit is substituted as a quoted literal)
+memgraph_query("MATCH (p:Person) RETURN p.name AS name LIMIT $limit",
+               params = list(limit = "10"))
+
+memgraph_disconnect()
+```
+
+## 4. Custom cards
+
+```{r, eval = FALSE}
+cards <- default_cards()
+cards[[1]]$cypher <- "MATCH (n:Person) RETURN count(n) AS people"
+memdash_app(cards = cards)
+```

@@ -44,5 +44,14 @@ memdash::memgraph_disconnect()
 ## Notes
 
 - Requires R with `shiny`, `bslib`, `reticulate`, `jsonlite`, `DT`, `visNetwork`,
-  `plotly` (all in `DESCRIPTION`) and a Python env with `neo4j` installed.
+  `plotly`, `markdown` (all in `DESCRIPTION`) and a Python env with `neo4j` installed.
 - If your Memgraph requires TLS, pass a `bolt+s://` / `neo4j+s://` URI.
+
+## Documentation site
+
+Hand-written `man/` pages cover every exported function, and a `pkgdown` config
+(`_pkgdown.yml`) plus a `get-started` vignette are included:
+
+```r
+pkgdown::build_site("r-package/memdash")
+```

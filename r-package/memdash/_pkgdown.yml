@@ -1,0 +1,52 @@
+url: https://JannikVindeloev.github.io/memdash
+
+title: memdash — Shiny dashboard for Memgraph
+
+description: >
+  An R package that connects to Memgraph over Bolt using the Python neo4j
+  driver via reticulate, runs openCypher, and renders results as Shiny
+  dashboard cards.
+
+template:
+  package: pkgdown
+  bootswatch: darkly
+
+navbar:
+  title: memdash
+  left:
+    - text: Get started
+      href: articles/get-started.html
+    - text: Reference
+      href: reference/index.html
+  right:
+    - icon: fa-github
+      href: https://github.com/JannikVindeloev/memdash
+
+articles:
+  - title: Get started
+    contents:
+      - get-started
+
+reference:
+  - title: Connect and query
+    contents:
+      - memgraph_connect
+      - memgraph_connected
+      - memgraph_disconnect
+      - memgraph_config
+      - memgraph_query
+      - memdash_seed_demo
+  - title: Prepare results
+    contents:
+      - records_to_df
+      - records_to_graph
+      - default_cards
+  - title: Shiny app
+    contents:
+      - memdash_app
+      - run_memdash
+
+footer:
+  components:
+    legal:
+      - text: MIT License
