@@ -25,6 +25,33 @@ records_to_igraph <- function(records) {
   ig
 }
 
+#' Compute fixed 2D coordinates from a tidygraph layout algorithm
+#'
+#' Builds a \code{tbl_graph} from the records and runs
+#' \code{tidygraph::create_layout(tg, layout = "igraph", algorithm = algorithm)},
+#' returning coordinates scaled to a visNetwork canvas. These are the same
+#' layout algorithms ggraph uses, so a visNetwork graph card can be rendered
+#' with fixed ggraph/tidygraph positions.
+#'
+#' @param records \code{records} element of a \code{\link[=memgraph_query]{memgraph_query()}} result.
+#' @param algorithm A tidygraph/igraph layout algorithm: \code{"fr"}, \code{"kk"},
+#'   \code{"drl"}, \code{"graphopt"}, \code{"mds"}, \code{"circle"}, \code{"grid"},
+#'   \code{"star"}, \code{"sugiyama"}.
+#' @return An \code{n x 2} numeric matrix with \code{rownames} = node ids,
+#'   columns \code{x}/\code{y} scaled to the visNetwork canvas.
+#' @export
+tidygraph_layout_coords <- function(records, algorithm = "fr") {
+  tg <- records_to_tidygraph(records)
+  if (tidygraph::gsize(tg) == 0 || tidygraph::gorder(tg) == 0) {
+    return(matrix(numeric(0), ncol = 2, dimnames = list(NULL, c("x", "y"))))
+  }
+  lay <- tidygraph::create_layout(tg, layout = "igraph", algorithm = algorithm)
+  nodes_tbl <- tidygraph::activate(lay, "nodes")
+  coords <- scale_to(as.matrix(data.frame(x = nodes_tbl$x, y = nodes_tbl$y)), 600, 400)
+  rownames(coords) <- as.character(nodes_tbl$name)
+  coords
+}
+
 #' Compute 2D coordinates for an igraph with a named igraph layout
 #'
 #' @param ig An \code{igraph} graph.

@@ -140,9 +140,8 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
             stringsAsFactors = FALSE))) else data.frame()
           layout <- card$layout %||% "auto"
           if (layout != "auto") {
-            ig <- records_to_igraph(res$records)
-            coords <- igraph_layout_coords(ig, layout)
-            pos <- coords[match(nodes$id, igraph::V(ig)$name), , drop = FALSE]
+            coords <- tidygraph_layout_coords(res$records, layout)
+            pos <- coords[match(nodes$id, rownames(coords)), , drop = FALSE]
             nodes$x <- pos[, 1]
             nodes$y <- pos[, 2]
             visNetwork::visNetwork(nodes, edges) %>%

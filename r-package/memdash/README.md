@@ -44,10 +44,12 @@ memdash::memgraph_disconnect()
 `text` (Markdown), `json`. See `default_cards()` for example Cypher per type.
 
 Graph cards support multiple layouts via the card's `layout` field:
-`auto` (interactive visNetwork forceAtlas2), igraph layouts (`fr`, `kk`, `drl`,
-`graphopt`, `mds`, `circle`, `grid`, `star`, `sugiyama` — computed with igraph,
-rendered as fixed positions in visNetwork), or `ggraph` (static tidygraph/ggraph
-plot). Helpers: `records_to_igraph()`, `igraph_layout_coords()`,
+`auto` (interactive visNetwork forceAtlas2), or a tidygraph/igraph algorithm
+(`fr`, `kk`, `drl`, `graphopt`, `mds`, `circle`, `grid`, `star`, `sugiyama`) whose
+fixed coordinates — computed with `tidygraph::create_layout()`, the same
+algorithms ggraph uses — are fed to visNetwork as static node positions
+(physics off), or `ggraph` (static ggraph plot). Helpers: `records_to_igraph()`,
+`igraph_layout_coords()`, `tidygraph_layout_coords()`,
 `records_to_tidygraph()`, `ggraph_from_records()`.
 
 ## Building, saving and sharing dashboards
