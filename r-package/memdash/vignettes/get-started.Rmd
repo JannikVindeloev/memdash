@@ -38,14 +38,15 @@ memdash::run_memdash()
 ```
 
 In the app: set **Bolt URI** to `bolt://localhost:7687`, press **Connect**,
-then **Load demo data** and **Run all**.
+then **Load demo data** and **Run all**. For Memgraph Enterprise
+multi-tenancy, set **Tenant database** (default `stxp4rd`).
 
 ## 3. Use it in code
 
 ```{r, eval = FALSE}
 library(memdash)
 
-memgraph_connect("bolt://localhost:7687")
+memgraph_connect("bolt://localhost:7687", database = "stxp4rd")  # tenant DB
 memdash_seed_demo()
 
 # Metric

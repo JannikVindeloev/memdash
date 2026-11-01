@@ -4,7 +4,7 @@
 \title{Build or launch the memdash Shiny dashboard builder}
 \usage{
 memdash_app(cards = default_cards(), uri = "bolt://localhost:7687",
-  read_only = FALSE, dashboard_file = NULL)
+  read_only = FALSE, dashboard_file = NULL, database = "stxp4rd")
 
 run_memdash(...)
 }
@@ -12,6 +12,8 @@ run_memdash(...)
 \item{cards}{Card definitions, see \code{\link[=default_cards]{default_cards}()},
 \code{\link[=new_card]{new_card}()}, or \code{\link[=load_dashboard]{load_dashboard}()}.}
 \item{uri}{Default Bolt URI shown in the connection dialog.}
+\item{database}{Default tenant database shown in the connection dialog (Memgraph
+Enterprise multi-tenancy; default \code{stxp4rd}).}
 \item{read_only}{When \code{TRUE}, add/edit/delete controls are hidden and card
 definitions cannot change — a viewing mode. Connect, Run all, per-card Run and
 auto-refresh still work. App-level only; the JSON file itself stays editable text.}

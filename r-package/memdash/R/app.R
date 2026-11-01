@@ -27,6 +27,8 @@ card_body_ui <- function(card) {
 #'   \code{\link{new_card}()}. Load persisted dashboards with
 #'   \code{\link{load_dashboard}()}.
 #' @param uri Default Bolt URI shown in the connection dialog.
+#' @param database Default tenant database shown in the connection dialog
+#'   (Memgraph Enterprise multi-tenancy; default \code{stxp4rd}).
 #' @param read_only When \code{TRUE}, the dashboard renders for viewing only:
 #'   add/edit/delete controls are hidden and card definitions cannot change.
 #'   Viewers can still connect, run queries, refresh and save a copy. Note this
@@ -36,7 +38,8 @@ card_body_ui <- function(card) {
 #' @return A \code{shiny.appobj}.
 #' @export
 memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
-                        read_only = FALSE, dashboard_file = NULL) {
+                        read_only = FALSE, dashboard_file = NULL,
+                        database = "stxp4rd") {
   if (!is.null(dashboard_file)) {
     loaded <- load_dashboard(dashboard_file)
     cards <- loaded$cards
@@ -58,7 +61,8 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
         shiny::column(3, shiny::textInput("uri", "Bolt URI", value = uri)),
         shiny::column(2, shiny::textInput("username", "Username", value = "")),
         shiny::column(2, shiny::passwordInput("password", "Password", value = "")),
-        shiny::column(2, shiny::actionButton("connect", "Connect", class = "btn-primary")),
+        shiny::column(2, shiny::textInput("database", "Tenant database", value = database)),
+        shiny::column(1, shiny::actionButton("connect", "Connect", class = "btn-primary")),
         shiny::column(1, shiny::actionButton("seed", "Load demo data", class = "btn-outline-secondary"))
       ),
       shiny::fluidRow(
@@ -190,7 +194,7 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
 
     shiny::observeEvent(input$connect, {
       tryCatch({
-        memgraph_connect(input$uri, input$username, input$password)
+        memgraph_connect(input$uri, input$username, input$password, database = input$database %||% "stxp4rd")
         values$connected <- TRUE
         output$conn_status <- shiny::renderText(paste("Connected to", input$uri))
         run_all()

@@ -78,7 +78,7 @@ export default function ConnectionScreen() {
             label="Database (optional)"
             value={form.database}
             onChange={(e) => set({ database: e.target.value })}
-            placeholder="memgraph"
+            placeholder="stxp4rd (tenant database)"
             fullWidth
             size="small"
           />

@@ -4,11 +4,13 @@ A shiny, NeoDash-style dashboard for [Memgraph](https://memgraph.com). Memgraph 
 Bolt protocol and openCypher, so memdash connects with the official `neo4j-driver` and runs
 plain Cypher — no plugins or adaptations needed.
 
-Inspired by [NeoDash](https://github.com/neo4j-contrib/neodash).
+Inspired by [NeoDash](https://github.com/neo4j-contrib/neodash). For Memgraph
+Enterprise multi-tenant deployments, both the web app and the R package default
+to the `stxp4rd` tenant database and open every Bolt session against it.
 
 ## Features
 
-- **Connect screen** — Bolt URI, optional username/password/database (default `bolt://localhost:7687`)
+- **Connect screen** — Bolt URI, optional username/password/tenant database (default `bolt://localhost:7687`, database `stxp4rd` for Memgraph Enterprise multi-tenancy)
 - **Drag-and-drop card grid** (react-grid-layout, persisted to localStorage)
 - **Cypher editor per card** with `$parameter` substitution and optional auto-refresh
 - **Visualizations**: table, graph (canvas force layout with draggable nodes), bar / line / pie
@@ -24,7 +26,7 @@ docker run -p 7687:7687 -p 7444:7444 memgraph/memgraph
 # 2. Install and start memdash:
 npm install
 npm run dev
-# open http://localhost:5173, connect to bolt://localhost:7687
+# open http://localhost:5173, connect to bolt://localhost:7687 (tenant db: stxp4rd)
 ```
 
 Build for production:

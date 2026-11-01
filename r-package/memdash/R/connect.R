@@ -2,6 +2,7 @@
 .memdash_state$driver <- NULL
 .memdash_state$config <- NULL
 .memdash_state$to_js <- NULL
+.memdash_state$database <- NULL
 
 .py_to_js_helper <- paste(
   "import datetime",
@@ -54,13 +55,14 @@
 #' @param uri Bolt URI, default \code{bolt://localhost:7687}.
 #' @param username Optional username (Memgraph default has no auth).
 #' @param password Optional password.
-#' @param database Optional database name (Memgraph default is \code{memgraph}).
+#' @param database Tenant database name. For Memgraph Enterprise multi-tenancy
+#'   this selects the tenant; defaults to \code{stxp4rd}.
 #' @return Invisible \code{TRUE} on success; throws an error otherwise.
 #' @export
 memgraph_connect <- function(uri = "bolt://localhost:7687",
                              username = "",
                              password = "",
-                             database = "memgraph") {
+                             database = "stxp4rd") {
   neo4j <- tryCatch(
     reticulate::import("neo4j"),
     error = function(e) stop(
@@ -79,6 +81,7 @@ memgraph_connect <- function(uri = "bolt://localhost:7687",
   .memdash_state$driver <- driver
   .memdash_state$to_js <- reticulate::py_run_string(.py_to_js_helper)$to_js
   .memdash_state$config <- list(uri = uri, username = username, database = database)
+  .memdash_state$database <- database
   invisible(TRUE)
 }
 
@@ -95,6 +98,7 @@ memgraph_disconnect <- function() {
   .memdash_state$driver <- NULL
   .memdash_state$config <- NULL
   .memdash_state$to_js <- NULL
+  .memdash_state$database <- NULL
   invisible(TRUE)
 }
 

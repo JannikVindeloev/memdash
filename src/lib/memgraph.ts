@@ -103,7 +103,8 @@ export async function runQuery(
   database?: string
 ): Promise<QueryResult> {
   if (!driver) throw new Error("Not connected to Memgraph.");
-  const session: Session = driver.session({ database: database && database !== "memgraph" ? database : undefined });
+  const db = (database ?? "").trim();
+  const session: Session = driver.session({ database: db.length > 0 ? db : undefined });
   try {
     const started = performance.now();
     const result = session.run(substituteParameters(cypher, params));

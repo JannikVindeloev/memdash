@@ -27,7 +27,7 @@ const defaultConnection: ConnectionConfig = {
   uri: "bolt://localhost:7687",
   username: "",
   password: "",
-  database: "memgraph",
+  database: "stxp4rd",
 };
 
 export const useDashboard = create<DashboardState>()(

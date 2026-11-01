@@ -26,7 +26,8 @@ memgraph_query <- function(cypher, params = list()) {
   }
   to_js <- .memdash_state$to_js
   driver <- .memdash_state$driver
-  session <- driver$session()
+  db <- .memdash_state$database
+  session <- if (!is.null(db) && nzchar(db)) driver$session(database = db) else driver$session()
   on.exit(try(session$close(), silent = TRUE), add = TRUE)
   t0 <- proc.time()[["elapsed"]]
   result <- session$run(query)

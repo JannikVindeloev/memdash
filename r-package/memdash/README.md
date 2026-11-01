@@ -21,12 +21,14 @@ devtools::install("r-package/memdash")
 memdash::run_memdash()
 # then open the app, set Bolt URI to bolt://localhost:7687, press Connect,
 # then "Load demo data" and "Run all".
+# Memgraph Enterprise multi-tenancy: the tenant database defaults to
+# "stxp4rd" (editable in the app's connection bar and in memgraph_connect()).
 ```
 
 ## Using it in code (no Shiny)
 
 ```r
-memdash::memgraph_connect("bolt://localhost:7687")
+memdash::memgraph_connect("bolt://localhost:7687", database = "stxp4rd")
 memdash::memdash_seed_demo()
 res <- memdash::memgraph_query("MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50")
 memdash::records_to_df(res$records, res$fields)   # data.frame for tables/charts
@@ -64,6 +66,8 @@ editable text.
 - Requires R with `shiny`, `bslib`, `reticulate`, `jsonlite`, `DT`, `visNetwork`,
   `plotly`, `markdown` (all in `DESCRIPTION`) and a Python env with `neo4j` installed.
 - If your Memgraph requires TLS, pass a `bolt+s://` / `neo4j+s://` URI.
+- Memgraph Enterprise multi-tenant setups: pass the tenant name as `database`
+  (default `stxp4rd`); every query session is opened against that tenant.
 
 ## Documentation site
 
