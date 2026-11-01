@@ -1,0 +1,25 @@
+.memdash-card-header {
+  font-weight: 600;
+}
+
+.memdash-metric {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.memdash-metric-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #3d7bfd;
+}
+
+.memdash-metric-label {
+  color: #9aa3b2;
+  font-size: 0.9rem;
+}
+
+#conn_status {
+  color: #9aa3b2;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}

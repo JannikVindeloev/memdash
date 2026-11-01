@@ -1,0 +1,26 @@
+Package: memdash
+Type: Package
+Title: Shiny Dashboard for Memgraph via the Python neo4j Driver (reticulate)
+Version: 0.1.0
+Authors@R: person("memdash contributors", role = c("aut", "cre"))
+Description: A NeoDash-style Shiny dashboard for Memgraph. Connects over Bolt
+    using the official Python 'neo4j' driver through reticulate, runs plain
+    openCypher, and renders results as tables, graphs, charts, metrics,
+    Markdown or JSON cards.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports:
+    shiny,
+    bslib,
+    reticulate,
+    jsonlite,
+    DT,
+    visNetwork,
+    plotly,
+    markdown
+Suggests:
+    devtools,
+    roxygen2
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Config/reticulate/miniconda: FALSE

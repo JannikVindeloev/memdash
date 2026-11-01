@@ -54,3 +54,10 @@ MATCH (p:Person) RETURN p.name AS name, p.born AS born LIMIT $limit
 
 React 18 + TypeScript + Vite, MUI, zustand (persisted state), react-grid-layout, recharts,
 react-markdown, neo4j-driver (Bolt client for Memgraph).
+
+## R / Shiny version
+
+There is also an R package under [`r-package/memdash`](r-package/memdash) that connects to
+Memgraph from R via **reticulate** + the Python `neo4j` driver (Bolt), with a Shiny UI
+(`memdash::run_memdash()`) and a programmatic API (`memgraph_connect()`, `memgraph_query()`,
+`records_to_df()`, `records_to_graph()`). See [r-package/memdash/README.md](r-package/memdash/README.md).
