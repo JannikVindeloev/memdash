@@ -1,0 +1,115 @@
+CARD_TYPES <- c("metric", "table", "graph", "bar", "line", "pie", "text", "json")
+
+`%||%` <- function(a, b) if (is.null(a)) b else a
+
+new_card_id <- function() {
+  paste0("c", format(as.integer(Sys.time() * 1e6), scientific = FALSE),
+         paste(sample(c(letters, 0:9), 4), collapse = ""))
+}
+
+#' Create a new dashboard card definition
+#'
+#' @param id Card id (generated when \code{NULL}). Must be unique per dashboard.
+#' @param title Card title shown in the header.
+#' @param type One of \code{"metric"}, \code{"table"}, \code{"graph"},
+#'   \code{"bar"}, \code{"line"}, \code{"pie"}, \code{"text"}, \code{"json"}.
+#' @param cypher openCypher query. \code{$param} placeholders are filled from \code{params}.
+#' @param params Named list of parameter values, e.g. \code{list(limit = "25")}.
+#' @param refresh Auto-refresh interval in seconds (\code{0} = off).
+#' @param width \code{"half"} or \code{"full"} column width.
+#' @return A card definition (list).
+#' @export
+new_card <- function(id = NULL, title = "New card",
+                     type = c("table", CARD_TYPES),
+                     cypher = "MATCH (n) RETURN count(n) AS nodes",
+                     params = list(), refresh = 0,
+                     width = c("half", "full")) {
+  list(
+    id = id %||% new_card_id(),
+    title = title,
+    type = match.arg(type),
+    cypher = cypher,
+    params = params,
+    refresh = refresh,
+    width = match.arg(width)
+  )
+}
+
+#' Serialize cards to the memdash dashboard JSON structure
+#' @param cards List of card definitions.
+#' @param name Dashboard name.
+#' @return A plain list ready for \code{jsonlite::toJSON()} (schemaVersion 1).
+#' @export
+dashboard_to_json <- function(cards, name = "memdash dashboard") {
+  list(
+    schemaVersion = 1,
+    name = name,
+    savedAt = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    cards = lapply(cards, function(c) list(
+      id = c$id,
+      title = c$title,
+      type = c$type,
+      cypher = c$cypher,
+      params = if (is.null(c$params)) list() else c$params,
+      refresh = c$refresh %||% 0,
+      width = c$width %||% "half"
+    ))
+  )
+}
+
+#' Save a dashboard (card list) to a JSON file
+#'
+#' The file can be reloaded with \code{\link{load_dashboard}()} by anyone using
+#' the package, recreating the dashboard exactly. The schema matches the web
+#' app's persisted format (schemaVersion 1).
+#' @param cards List of card definitions.
+#' @param file Path of the JSON file to write.
+#' @param name Dashboard name stored in the file.
+#' @return Invisible \code{file}.
+#' @export
+save_dashboard <- function(cards, file, name = "memdash dashboard") {
+  writeLines(jsonlite::toJSON(dashboard_to_json(cards, name), auto_unbox = TRUE, pretty = TRUE), file)
+  invisible(file)
+}
+
+#' Load a dashboard from a JSON file
+#'
+#' @param file Path of a JSON file written by \code{\link{save_dashboard}()}.
+#' @return A list with \code{name} and \code{cards} (validated card definitions).
+#' @export
+load_dashboard <- function(file) {
+  raw <- jsonlite::fromJSON(file, simplifyVector = FALSE)
+  validate_dashboard(raw)
+}
+
+validate_dashboard <- function(raw) {
+  if (!is.list(raw) || is.null(raw$cards)) {
+    stop("Not a memdash dashboard JSON: missing 'cards'.", call. = FALSE)
+  }
+  cards <- lapply(raw$cards, function(c) {
+    if (is.null(c$id)) c$id <- new_card_id()
+    if (is.null(c$title)) c$title <- "Untitled"
+    if (is.null(c$type) || !(c$type %in% CARD_TYPES)) c$type <- "table"
+    if (is.null(c$cypher)) c$cypher <- ""
+    c$params <- if (is.null(c$params)) list() else as.list(c$params)
+    if (is.null(c$refresh)) c$refresh <- 0
+    if (is.null(c$width) || !(c$width %in% c("half", "full"))) c$width <- "half"
+    c
+  })
+  list(name = raw$name %||% "memdash dashboard", cards = cards)
+}
+
+params_to_text <- function(params) {
+  if (!length(params)) return("")
+  paste(vapply(names(params), function(n) paste0(n, "=", params[[n]]), character(1)), collapse = "\n")
+}
+
+text_to_params <- function(txt) {
+  out <- list()
+  if (is.null(txt) || !nzchar(trimws(txt))) return(out)
+  for (line in strsplit(txt, "\n", fixed = TRUE)[[1]]) {
+    i <- regexpr("=", line, fixed = TRUE)
+    if (i > 1) out[[trimws(substr(line, 1, i - 1))]] <- trimws(substr(line, i + 1, nchar(line)))
+  }
+  out
+}

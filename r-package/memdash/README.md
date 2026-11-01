@@ -41,6 +41,24 @@ memdash::memgraph_disconnect()
 `metric`, `table` (DT), `graph` (visNetwork), `bar` / `line` / `pie` (plotly),
 `text` (Markdown), `json`. See `default_cards()` for example Cypher per type.
 
+## Building, saving and sharing dashboards
+
+`run_memdash()` is a full builder: add/edit/delete cards (title, visualization
+type, Cypher with `$params`, per-card auto-refresh, width), Run per card or
+Run all, and save the whole dashboard as a portable JSON file:
+
+```r
+save_dashboard(cards, "my_dashboard.json")   # persist
+d <- load_dashboard("my_dashboard.json")      # recreate anywhere
+memdash_app(cards = d$cards)                 # editable copy
+memdash_app(dashboard_file = "my_dashboard.json")  # read-only viewer
+run_memdash(read_only = TRUE)                # view-only mode
+```
+
+`read_only = TRUE` hides all editing controls (viewers can still connect, run
+and refresh). It is an app-level flag — the JSON file itself remains plain,
+editable text.
+
 ## Notes
 
 - Requires R with `shiny`, `bslib`, `reticulate`, `jsonlite`, `DT`, `visNetwork`,

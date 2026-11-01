@@ -65,10 +65,28 @@ memgraph_query("MATCH (p:Person) RETURN p.name AS name LIMIT $limit",
 memgraph_disconnect()
 ```
 
-## 4. Custom cards
+## 4. Build, save and share dashboards
 
 ```{r, eval = FALSE}
+# Editable builder: add/edit/delete cards, per-card Run and auto-refresh
+run_memdash()
+
+# Cards are plain lists — build your own
 cards <- default_cards()
-cards[[1]]$cypher <- "MATCH (n:Person) RETURN count(n) AS people"
-memdash_app(cards = cards)
+cards[[1]] <- new_card(title = "People", type = "table",
+                       cypher = "MATCH (p:Person) RETURN p.name AS name, p.born AS born")
+
+# Persist as portable JSON (same schema as the web app)
+save_dashboard(cards, "my_dashboard.json")
+
+# Anyone with the package can recreate the dashboard
+d <- load_dashboard("my_dashboard.json")
+memdash_app(cards = d$cards)               # editable copy
+memdash_app(dashboard_file = "my_dashboard.json")  # read-only viewer
+run_memdash(read_only = TRUE)               # read-only mode for current cards
 ```
+
+\code{read_only = TRUE} hides all editing controls so a second user can view and
+run the dashboard without being able to change it. It is an app-level flag —
+the JSON file itself is plain text; for real access control, keep the canonical
+file somewhere the viewer cannot write.

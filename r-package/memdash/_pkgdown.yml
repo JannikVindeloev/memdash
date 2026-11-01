@@ -41,6 +41,12 @@ reference:
       - records_to_df
       - records_to_graph
       - default_cards
+  - title: Dashboards (cards, JSON persistence)
+    contents:
+      - new_card
+      - save_dashboard
+      - load_dashboard
+      - dashboard_to_json
   - title: Shiny app
     contents:
       - memdash_app
