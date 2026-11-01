@@ -32,7 +32,9 @@ new_card_id <- function() {
 #' @param cypher openCypher query. \code{$param} placeholders are filled from \code{params}.
 #' @param params Named list of parameter values, e.g. \code{list(limit = "25")}.
 #' @param refresh Auto-refresh interval in seconds (\code{0} = off).
-#' @param width \code{"half"} or \code{"full"} column width.
+#' @param width Column span on a 12-column grid, integer \code{1}–\code{12}
+#'   (legacy \code{"half"}/\code{"full"} values are accepted and mapped to
+#'   \code{6}/\code{12}). This is how cards are resized in the app.
 #' @param layout Graph layout for \code{type = "graph"} cards: \code{"auto"} for
 #'   visNetwork's forceAtlas2, an igraph layout name (\code{"fr"}, \code{"kk"},
 #'   \code{"drl"}, \code{"graphopt"}, \code{"mds"}, \code{"circle"}, \code{"grid"},
@@ -44,7 +46,7 @@ new_card <- function(id = NULL, title = "New card",
                      type = c("table", CARD_TYPES),
                      cypher = "MATCH (n) RETURN count(n) AS nodes",
                      params = list(), refresh = 0,
-                     width = c("half", "full"),
+                     width = 6,
                      layout = c("auto", names(GRAPH_LAYOUTS)),
                      scatter = list(x = "", y = "", colour = "", shape = "", size = "", text = "")) {
   list(
@@ -54,10 +56,19 @@ new_card <- function(id = NULL, title = "New card",
     cypher = cypher,
     params = params,
     refresh = refresh,
-    width = match.arg(width),
+    width = normalize_width(width),
     layout = match.arg(layout),
     scatter = if (is.null(scatter)) list() else as.list(scatter)
   )
+}
+
+normalize_width <- function(w) {
+  if (is.character(w)) {
+    w <- switch(w, half = 6L, full = 12L, NA_integer_)
+  }
+  w <- suppressWarnings(as.integer(w))
+  if (length(w) != 1 || is.na(w)) w <- 6L
+  max(1L, min(12L, w))
 }
 
 #' Serialize cards to the memdash dashboard JSON structure
@@ -77,7 +88,7 @@ dashboard_to_json <- function(cards, name = "memdash dashboard") {
       cypher = c$cypher,
       params = if (is.null(c$params)) list() else c$params,
       refresh = c$refresh %||% 0,
-      width = c$width %||% "half",
+      width = normalize_width(c$width),
       layout = c$layout %||% "auto",
       scatter = if (is.null(c$scatter)) list() else as.list(c$scatter)
     ))
@@ -120,7 +131,7 @@ validate_dashboard <- function(raw) {
     if (is.null(c$cypher)) c$cypher <- ""
     c$params <- if (is.null(c$params)) list() else as.list(c$params)
     if (is.null(c$refresh)) c$refresh <- 0
-    if (is.null(c$width) || !(c$width %in% c("half", "full"))) c$width <- "half"
+    c$width <- normalize_width(c$width)
     if (is.null(c$layout) || !(c$layout %in% names(GRAPH_LAYOUTS))) c$layout <- "auto"
     if (is.null(c$scatter)) c$scatter <- list()
     c

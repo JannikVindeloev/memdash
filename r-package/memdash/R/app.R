@@ -234,7 +234,7 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
             shiny::updateTextAreaInput(session, "edit_cypher", value = card_now$cypher)
             shiny::updateTextAreaInput(session, "edit_params", value = params_to_text(card_now$params))
             shiny::updateNumericInput(session, "edit_refresh", value = card_now$refresh %||% 0)
-            shiny::updateSelectInput(session, "edit_width", selected = card_now$width %||% "half")
+            shiny::updateSliderInput(session, "edit_width", value = normalize_width(card_now$width))
             shiny::updateSelectInput(session, "edit_layout", selected = card_now$layout %||% "auto")
             fields <- if (!is.null(values$results[[card_id]]) && !is.null(values$results[[card_id]]$fields)) values$results[[card_id]]$fields else character(0)
             choices <- c("auto", fields)
@@ -331,7 +331,7 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
         shiny::textAreaInput("edit_cypher", "Cypher query", rows = 8),
         shiny::textAreaInput("edit_params", "Parameters ($key in query, one per line: key=value)", rows = 2),
         shiny::numericInput("edit_refresh", "Auto-refresh (seconds, 0 = off)", value = 0, min = 0),
-        shiny::selectInput("edit_width", "Width", choices = c(half = "half", full = "full")),
+        shiny::sliderInput("edit_width", "Width (columns of 12)", min = 1, max = 12, step = 1, value = 6),
         shiny::selectInput("edit_layout", "Graph layout (graph cards only)", choices = GRAPH_LAYOUTS),
         shiny::tags$hr(),
         shiny::tags$div(class = "fw-bold", "Scatter aesthetics (scatter cards only; column names, blank = auto/none)"),
@@ -363,7 +363,7 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
       card$cypher <- input$edit_cypher
       card$params <- text_to_params(input$edit_params)
       card$refresh <- input$edit_refresh
-      card$width <- input$edit_width
+      card$width <- normalize_width(input$edit_width)
       card$layout <- input$edit_layout
       empty_to_blank <- function(v) if (identical(v, "auto") || identical(v, "none")) "" else v
       card$scatter <- list(
@@ -413,7 +413,7 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
             if (!is.null(res) && is.null(res$error)) paste0(length(res$records), " row(s)") else "not run yet")
         )
         bslib::layout_column_wrap(
-          width = if (identical(card$width %||% "half", "full")) 1 else 1/2,
+          width = normalize_width(card$width) / 12,
           bslib::card(bslib::card_header(header), bslib::card_body(card_body_ui(card)), bslib::card_footer(footer))
         )
       }))

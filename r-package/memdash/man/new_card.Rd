@@ -4,7 +4,7 @@
 \usage{
 new_card(id = NULL, title = "New card", type = c("table", CARD_TYPES),
   cypher = "MATCH (n) RETURN count(n) AS nodes", params = list(),
-  refresh = 0, width = c("half", "full"),
+  refresh = 0, width = 6,
   layout = c("auto", "fr", "kk", "drl", "graphopt", "mds", "circle", "grid",
     "star", "sugiyama", "ggraph"),
   scatter = list(x = "", y = "", colour = "", shape = "", size = "", text = ""))
@@ -17,7 +17,8 @@ new_card(id = NULL, title = "New card", type = c("table", CARD_TYPES),
 \item{cypher}{openCypher query. \code{$param} placeholders are filled from \code{params}.}
 \item{params}{Named list of parameter values, e.g. \code{list(limit = "25")}.}
 \item{refresh}{Auto-refresh interval in seconds (\code{0} = off).}
-\item{width}{\code{"half"} or \code{"full"} column width.}
+\item{width}{Column span on a 12-column grid, integer \code{1}–\code{12}
+(legacy \code{"half"}/\code{"full"} accepted, mapped to \code{6}/\code{12}).}
 \item{layout}{Graph layout for \code{type = "graph"} cards: \code{"auto"}
 (visNetwork forceAtlas2), a tidygraph layout name rendered as fixed positions, or
 \code{"ggraph"} for a static tidygraph/ggraph plot. See \link{graph_layouts}.}

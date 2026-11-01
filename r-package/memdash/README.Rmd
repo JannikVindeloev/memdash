@@ -69,9 +69,11 @@ memgraph_disconnect()
 ## Building, saving and sharing dashboards
 
 `run_memdash()` is a full builder: add/edit/delete cards (title, visualization
-type, Cypher with `$params`, per-card auto-refresh, width, graph layout,
-scatter aesthetics), Run per card or Run all, and save the whole dashboard as
-portable JSON:
+type, Cypher with `$params`, per-card auto-refresh, graph layout, scatter
+aesthetics) and resize them with a 1–12 column-span width slider — cards are
+laid out on a 12-column grid and the span is persisted in the dashboard JSON
+(legacy `half`/`full` files load as 6/12). Run per card or Run all, and save
+the whole dashboard as portable JSON:
 
 ```{r, eval = FALSE}
 save_dashboard(cards, "my_dashboard.json")
