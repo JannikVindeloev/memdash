@@ -4,7 +4,9 @@
 \usage{
 new_card(id = NULL, title = "New card", type = c("table", CARD_TYPES),
   cypher = "MATCH (n) RETURN count(n) AS nodes", params = list(),
-  refresh = 0, width = c("half", "full"))
+  refresh = 0, width = c("half", "full"),
+  layout = c("auto", "fr", "kk", "drl", "graphopt", "mds", "circle", "grid",
+    "star", "sugiyama", "ggraph"))
 }
 \arguments{
 \item{id}{Card id (generated when \code{NULL}). Must be unique per dashboard.}
@@ -15,6 +17,9 @@ new_card(id = NULL, title = "New card", type = c("table", CARD_TYPES),
 \item{params}{Named list of parameter values, e.g. \code{list(limit = "25")}.}
 \item{refresh}{Auto-refresh interval in seconds (\code{0} = off).}
 \item{width}{\code{"half"} or \code{"full"} column width.}
+\item{layout}{Graph layout for \code{type = "graph"} cards: \code{"auto"}
+(visNetwork forceAtlas2), an igraph layout name rendered as fixed positions, or
+\code{"ggraph"} for a static tidygraph/ggraph plot. See \link{graph_layouts}.}
 }
 \value{
 A card definition (list).

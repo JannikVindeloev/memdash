@@ -11,7 +11,11 @@ card_body_ui <- function(card) {
   switch(card$type,
     metric = shiny::uiOutput(card_output_id(paste0(card$id, "_body"))),
     table = DT::dataTableOutput(card_output_id(paste0(card$id, "_tbl"))),
-    graph = visNetwork::visNetworkOutput(card_output_id(paste0(card$id, "_net")), height = "320px"),
+    graph = if (identical(card$layout %||% "auto", "ggraph")) {
+      shiny::plotOutput(card_output_id(paste0(card$id, "_gg")), height = "340px")
+    } else {
+      visNetwork::visNetworkOutput(card_output_id(paste0(card$id, "_net")), height = "320px")
+    },
     bar = plotly::plotlyOutput(card_output_id(paste0(card$id, "_plt")), height = "300px"),
     line = plotly::plotlyOutput(card_output_id(paste0(card$id, "_plt")), height = "300px"),
     pie = plotly::plotlyOutput(card_output_id(paste0(card$id, "_plt")), height = "300px"),
@@ -109,7 +113,19 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
           DT::datatable(records_to_df(res$records, res$fields), options = list(pageLength = 10))
         })
       }
-      if (card$type == "graph") {
+      if (card$type == "graph" && identical(card$layout %||% "auto", "ggraph")) {
+        output[[card_output_id(paste0(card$id, "_gg"))]] <- shiny::renderPlot({
+          res <- values$results[[card$id]]
+          shiny::req(res)
+          if (!is.null(res$error)) {
+            return(ggplot2::ggplot() +
+              ggplot2::annotate("text", 0, 0, label = res$error, color = "red") +
+              ggplot2::theme_void())
+          }
+          ggraph_from_records(res$records, layout = "fr")
+        })
+      }
+      if (card$type == "graph" && !identical(card$layout %||% "auto", "ggraph")) {
         output[[card_output_id(paste0(card$id, "_net"))]] <- visNetwork::renderVisNetwork({
           res <- values$results[[card$id]]
           shiny::req(res)
@@ -122,9 +138,21 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
           edges <- if (length(g$edges)) do.call(rbind, lapply(g$edges, function(e) data.frame(
             id = e$id, from = e$from, to = e$to, label = e$label, title = e$title,
             stringsAsFactors = FALSE))) else data.frame()
-          visNetwork::visNetwork(nodes, edges) %>%
-            visNetwork::visPhysics(solver = "forceAtlas2Based") %>%
-            visNetwork::visOptions(highlightNearest = TRUE)
+          layout <- card$layout %||% "auto"
+          if (layout != "auto") {
+            ig <- records_to_igraph(res$records)
+            coords <- igraph_layout_coords(ig, layout)
+            pos <- coords[match(nodes$id, igraph::V(ig)$name), , drop = FALSE]
+            nodes$x <- pos[, 1]
+            nodes$y <- pos[, 2]
+            visNetwork::visNetwork(nodes, edges) %>%
+              visNetwork::visOptions(highlightNearest = TRUE) %>%
+              visNetwork::visPhysics(enabled = FALSE)
+          } else {
+            visNetwork::visNetwork(nodes, edges) %>%
+              visNetwork::visPhysics(solver = "forceAtlas2Based") %>%
+              visNetwork::visOptions(highlightNearest = TRUE)
+          }
         })
       }
       if (card$type %in% c("bar", "line", "pie")) {
@@ -183,6 +211,7 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
             shiny::updateTextAreaInput(session, "edit_params", value = params_to_text(card_now$params))
             shiny::updateNumericInput(session, "edit_refresh", value = card_now$refresh %||% 0)
             shiny::updateSelectInput(session, "edit_width", selected = card_now$width %||% "half")
+            shiny::updateSelectInput(session, "edit_layout", selected = card_now$layout %||% "auto")
             shiny::showModal(card_editor_modal())
           })
         }
@@ -268,6 +297,7 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
         shiny::textAreaInput("edit_params", "Parameters ($key in query, one per line: key=value)", rows = 2),
         shiny::numericInput("edit_refresh", "Auto-refresh (seconds, 0 = off)", value = 0, min = 0),
         shiny::selectInput("edit_width", "Width", choices = c(half = "half", full = "full")),
+        shiny::selectInput("edit_layout", "Graph layout (graph cards only)", choices = GRAPH_LAYOUTS),
         footer = shiny::tagList(
           shiny::actionButton("edit_delete", "Delete", class = "btn-danger"),
           shiny::actionButton("edit_save", "Save", class = "btn-primary"),
@@ -287,6 +317,7 @@ memdash_app <- function(cards = default_cards(), uri = "bolt://localhost:7687",
       card$params <- text_to_params(input$edit_params)
       card$refresh <- input$edit_refresh
       card$width <- input$edit_width
+      card$layout <- input$edit_layout
       values$cards[[idx]] <- card
       register_card(card, force = TRUE)
       values$results[[id]] <- run_card_query(card)

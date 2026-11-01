@@ -59,6 +59,14 @@ g <- records_to_graph(res$records)
 length(g$nodes)  # visNetwork-ready nodes
 length(g$edges)  # visNetwork-ready edges
 
+# igraph / tidygraph layouts for graph cards
+ig <- records_to_igraph(res$records)
+coords <- igraph_layout_coords(ig, "kk")     # n x 2 fixed coordinates
+ggraph_from_records(res$records, "fr")       # static ggplot
+# In the app: set a graph card's layout to "kk", "drl", ..., or "ggraph"
+new_card(type = "graph", layout = "kk",
+         cypher = "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100")
+
 # Parameters ($limit is substituted as a quoted literal)
 memgraph_query("MATCH (p:Person) RETURN p.name AS name LIMIT $limit",
                params = list(limit = "10"))

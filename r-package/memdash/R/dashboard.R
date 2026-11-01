@@ -1,5 +1,19 @@
 CARD_TYPES <- c("metric", "table", "graph", "bar", "line", "pie", "text", "json")
 
+GRAPH_LAYOUTS <- c(
+  "auto" = "auto (visNetwork forceAtlas2)",
+  "fr" = "igraph: Fruchterman-Reingold",
+  "kk" = "igraph: Kamada-Kawai",
+  "drl" = "igraph: DrL",
+  "graphopt" = "igraph: graphopt",
+  "mds" = "igraph: MDS",
+  "circle" = "igraph: circle",
+  "grid" = "igraph: grid",
+  "star" = "igraph: star",
+  "sugiyama" = "igraph: Sugiyama (dendrogram)",
+  "ggraph" = "tidygraph/ggraph (static)"
+)
+
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 new_card_id <- function() {
@@ -17,13 +31,19 @@ new_card_id <- function() {
 #' @param params Named list of parameter values, e.g. \code{list(limit = "25")}.
 #' @param refresh Auto-refresh interval in seconds (\code{0} = off).
 #' @param width \code{"half"} or \code{"full"} column width.
+#' @param layout Graph layout for \code{type = "graph"} cards: \code{"auto"} for
+#'   visNetwork's forceAtlas2, an igraph layout name (\code{"fr"}, \code{"kk"},
+#'   \code{"drl"}, \code{"graphopt"}, \code{"mds"}, \code{"circle"}, \code{"grid"},
+#'   \code{"star"}, \code{"sugiyama"}) computed with igraph and rendered as fixed
+#'   positions in visNetwork, or \code{"ggraph"} for a static tidygraph/ggraph plot.
 #' @return A card definition (list).
 #' @export
 new_card <- function(id = NULL, title = "New card",
                      type = c("table", CARD_TYPES),
                      cypher = "MATCH (n) RETURN count(n) AS nodes",
                      params = list(), refresh = 0,
-                     width = c("half", "full")) {
+                     width = c("half", "full"),
+                     layout = c("auto", names(GRAPH_LAYOUTS))) {
   list(
     id = id %||% new_card_id(),
     title = title,
@@ -31,7 +51,8 @@ new_card <- function(id = NULL, title = "New card",
     cypher = cypher,
     params = params,
     refresh = refresh,
-    width = match.arg(width)
+    width = match.arg(width),
+    layout = match.arg(layout)
   )
 }
 
@@ -52,7 +73,8 @@ dashboard_to_json <- function(cards, name = "memdash dashboard") {
       cypher = c$cypher,
       params = if (is.null(c$params)) list() else c$params,
       refresh = c$refresh %||% 0,
-      width = c$width %||% "half"
+      width = c$width %||% "half",
+      layout = c$layout %||% "auto"
     ))
   )
 }
@@ -94,6 +116,7 @@ validate_dashboard <- function(raw) {
     c$params <- if (is.null(c$params)) list() else as.list(c$params)
     if (is.null(c$refresh)) c$refresh <- 0
     if (is.null(c$width) || !(c$width %in% c("half", "full"))) c$width <- "half"
+    if (is.null(c$layout) || !(c$layout %in% names(GRAPH_LAYOUTS))) c$layout <- "auto"
     c
   })
   list(name = raw$name %||% "memdash dashboard", cards = cards)

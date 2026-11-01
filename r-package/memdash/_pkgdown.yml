@@ -41,6 +41,9 @@ reference:
       - records_to_df
       - records_to_graph
       - default_cards
+  - title: Graph layouts (igraph / tidygraph / ggraph)
+    contents:
+      - graph_layouts
   - title: Dashboards (cards, JSON persistence)
     contents:
       - new_card
