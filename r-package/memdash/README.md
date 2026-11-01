@@ -1,4 +1,10 @@
-# memdash (R package)
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# memdash
+
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
 
 A Shiny dashboard for [Memgraph](https://memgraph.com), inspired by
 [NeoDash](https://github.com/neo4j-contrib/neodash). It connects over **Bolt**
@@ -6,94 +12,80 @@ using the official Python [`neo4j`](https://pypi.org/project/neo4j/) driver
 through **reticulate** — Memgraph speaks Bolt + openCypher, so no server-side
 changes are needed.
 
-## Install & run
+## Installation
 
-```r
-# 1. Python driver (once, in the reticulate Python env):
+``` r
+# Python driver (once, in the reticulate Python environment):
 reticulate::py_install("neo4j")
 
-# 2. Install the package (from r-package/memdash):
+# Install the package from source:
 devtools::install("r-package/memdash")
-
-# 3. Start Memgraph, e.g.:  docker run -p 7687:7687 memgraph/memgraph
-
-# 4. Launch the dashboard:
-memdash::run_memdash()
-# then open the app, set Bolt URI to bolt://localhost:7687, press Connect,
-# then "Load demo data" and "Run all".
-# Memgraph Enterprise multi-tenancy: the tenant database defaults to
-# "stxp4rd" (editable in the app's connection bar and in memgraph_connect()).
 ```
+
+## Quick start
+
+Start Memgraph (e.g. `docker run -p 7687:7687 memgraph/memgraph`), then:
+
+``` r
+library(memdash)
+run_memdash()
+```
+
+In the app: set **Bolt URI** to `bolt://localhost:7687`, press **Connect**, then
+**Load demo data** and **Run all**. For Memgraph Enterprise multi-tenancy the
+**Tenant database** defaults to `stxp4rd`.
 
 ## Using it in code (no Shiny)
 
-```r
-memdash::memgraph_connect("bolt://localhost:7687", database = "stxp4rd")
-memdash::memdash_seed_demo()
-res <- memdash::memgraph_query("MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50")
-memdash::records_to_df(res$records, res$fields)   # data.frame for tables/charts
-memdash::records_to_graph(res$records)            # nodes/edges for visNetwork
-memdash::memgraph_query("MATCH (p:Person) RETURN p.name AS name LIMIT $limit",
-                       params = list(limit = "10"))
-memdash::memgraph_disconnect()
+``` r
+memgraph_connect("bolt://localhost:7687", database = "stxp4rd")
+memdash_seed_demo()
+
+res <- memgraph_query("MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50")
+records_to_graph(res$records)          # visNetwork nodes/edges
+records_to_igraph(res$records)          # igraph
+tidygraph_layout_coords(res$records, "kk")  # fixed tidygraph coords
+records_to_df(memgraph_query("MATCH (n) RETURN count(n) AS nodes")$records,
+              memgraph_query("MATCH (n) RETURN count(n) AS nodes")$fields)
+
+memgraph_query("MATCH (p:Person) RETURN p.name AS name LIMIT $limit",
+               params = list(limit = "10"))
+memgraph_disconnect()
 ```
-
-## Card types
-
-`metric`, `table` (DT), `graph`, `scatter`, `bar` / `line` / `pie` (plotly),
-`text` (Markdown), `json`. See `default_cards()` for example Cypher per type.
-
-`scatter` cards render an interactive plotly scatter/marker plot. Aesthetics are
-mapped per card via the `scatter` field (`x`, `y`, `colour`, `shape`, `size`,
-`text` — query column names; blank `x`/`y` default to the first/second column,
-blank others to none):
-
-```r
-new_card(type = "scatter", title = "Requests vs latency",
-         cypher = "MATCH (m:Metric) RETURN m.hour AS h, m.latency AS lat, m.requests AS req",
-         scatter = list(x = "h", y = "lat", colour = "req", text = "h"))
-```
-
-Graph cards support multiple layouts via the card's `layout` field:
-`auto` (interactive visNetwork forceAtlas2), or a tidygraph/igraph algorithm
-(`fr`, `kk`, `drl`, `graphopt`, `mds`, `circle`, `grid`, `star`, `sugiyama`) whose
-fixed coordinates — computed with `tidygraph::create_layout()`, the same
-algorithms ggraph uses — are fed to visNetwork as static node positions
-(physics off), or `ggraph` (static ggraph plot). Helpers: `records_to_igraph()`,
-`igraph_layout_coords()`, `tidygraph_layout_coords()`,
-`records_to_tidygraph()`, `ggraph_from_records()`.
 
 ## Building, saving and sharing dashboards
 
 `run_memdash()` is a full builder: add/edit/delete cards (title, visualization
-type, Cypher with `$params`, per-card auto-refresh, width), Run per card or
-Run all, and save the whole dashboard as a portable JSON file:
+type, Cypher with `$params`, per-card auto-refresh, width, graph layout,
+scatter aesthetics), Run per card or Run all, and save the whole dashboard as
+portable JSON:
 
-```r
-save_dashboard(cards, "my_dashboard.json")   # persist
-d <- load_dashboard("my_dashboard.json")      # recreate anywhere
-memdash_app(cards = d$cards)                 # editable copy
+``` r
+save_dashboard(cards, "my_dashboard.json")
+d <- load_dashboard("my_dashboard.json")
+memdash_app(cards = d$cards)                    # editable copy
 memdash_app(dashboard_file = "my_dashboard.json")  # read-only viewer
-run_memdash(read_only = TRUE)                # view-only mode
+run_memdash(read_only = TRUE)
 ```
 
 `read_only = TRUE` hides all editing controls (viewers can still connect, run
 and refresh). It is an app-level flag — the JSON file itself remains plain,
 editable text.
 
-## Notes
+## Card types
 
-- Requires R with `shiny`, `bslib`, `reticulate`, `jsonlite`, `DT`, `visNetwork`,
-  `plotly`, `markdown` (all in `DESCRIPTION`) and a Python env with `neo4j` installed.
-- If your Memgraph requires TLS, pass a `bolt+s://` / `neo4j+s://` URI.
-- Memgraph Enterprise multi-tenant setups: pass the tenant name as `database`
-  (default `stxp4rd`); every query session is opened against that tenant.
+`metric`, `table` (DT), `graph` (visNetwork; layouts: `auto` forceAtlas2, fixed
+tidygraph/igraph layouts `fr`/`kk`/`drl`/`graphopt`/`mds`/`circle`/`grid`/
+`star`/`sugiyama`, or static `ggraph`), `scatter` (plotly; x/y/colour/shape/
+size/text), `bar` / `line` / `pie` (plotly), `text` (Markdown), `json`.
+See `default_cards()` for example Cypher per type.
 
-## Documentation site
+## Documentation
 
-Hand-written `man/` pages cover every exported function, and a `pkgdown` config
-(`_pkgdown.yml`) plus a `get-started` vignette are included:
-
-```r
+``` r
 pkgdown::build_site("r-package/memdash")
 ```
+
+## License
+
+Copyright (c) 2025 Novonesis. Proprietary — all rights reserved (see `LICENSE`).

@@ -1,0 +1,104 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# memdash
+
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
+A Shiny dashboard for [Memgraph](https://memgraph.com), inspired by
+[NeoDash](https://github.com/neo4j-contrib/neodash). It connects over **Bolt**
+using the official Python [`neo4j`](https://pypi.org/project/neo4j/) driver
+through **reticulate** — Memgraph speaks Bolt + openCypher, so no server-side
+changes are needed.
+
+## Installation
+
+```{r, eval = FALSE}
+# Python driver (once, in the reticulate Python environment):
+reticulate::py_install("neo4j")
+
+# Install the package from source:
+devtools::install("r-package/memdash")
+```
+
+## Quick start
+
+Start Memgraph (e.g. `docker run -p 7687:7687 memgraph/memgraph`), then:
+
+```{r, eval = FALSE}
+library(memdash)
+run_memdash()
+```
+
+In the app: set **Bolt URI** to `bolt://localhost:7687`, press **Connect**, then
+**Load demo data** and **Run all**. For Memgraph Enterprise multi-tenancy the
+**Tenant database** defaults to `stxp4rd`.
+
+## Using it in code (no Shiny)
+
+```{r, eval = FALSE}
+memgraph_connect("bolt://localhost:7687", database = "stxp4rd")
+memdash_seed_demo()
+
+res <- memgraph_query("MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50")
+records_to_graph(res$records)          # visNetwork nodes/edges
+records_to_igraph(res$records)          # igraph
+tidygraph_layout_coords(res$records, "kk")  # fixed tidygraph coords
+records_to_df(memgraph_query("MATCH (n) RETURN count(n) AS nodes")$records,
+              memgraph_query("MATCH (n) RETURN count(n) AS nodes")$fields)
+
+memgraph_query("MATCH (p:Person) RETURN p.name AS name LIMIT $limit",
+               params = list(limit = "10"))
+memgraph_disconnect()
+```
+
+## Building, saving and sharing dashboards
+
+`run_memdash()` is a full builder: add/edit/delete cards (title, visualization
+type, Cypher with `$params`, per-card auto-refresh, width, graph layout,
+scatter aesthetics), Run per card or Run all, and save the whole dashboard as
+portable JSON:
+
+```{r, eval = FALSE}
+save_dashboard(cards, "my_dashboard.json")
+d <- load_dashboard("my_dashboard.json")
+memdash_app(cards = d$cards)                    # editable copy
+memdash_app(dashboard_file = "my_dashboard.json")  # read-only viewer
+run_memdash(read_only = TRUE)
+```
+
+`read_only = TRUE` hides all editing controls (viewers can still connect, run
+and refresh). It is an app-level flag — the JSON file itself remains plain,
+editable text.
+
+## Card types
+
+`metric`, `table` (DT), `graph` (visNetwork; layouts: `auto` forceAtlas2, fixed
+tidygraph/igraph layouts `fr`/`kk`/`drl`/`graphopt`/`mds`/`circle`/`grid`/
+`star`/`sugiyama`, or static `ggraph`), `scatter` (plotly; x/y/colour/shape/
+size/text), `bar` / `line` / `pie` (plotly), `text` (Markdown), `json`.
+See `default_cards()` for example Cypher per type.
+
+## Documentation
+
+```{r, eval = FALSE}
+pkgdown::build_site("r-package/memdash")
+```
+
+## License
+
+Copyright (c) 2025 Novonesis. Proprietary — all rights reserved (see `LICENSE`).
