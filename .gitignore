@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.Renviron
+*.bundle
+memdash-patches/
+*.local
+.DS_Store

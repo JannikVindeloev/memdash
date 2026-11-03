@@ -1,0 +1,33 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background-color: #10131a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: #3d7bfd !important;
+  opacity: 0.25;
+  border-radius: 8px;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

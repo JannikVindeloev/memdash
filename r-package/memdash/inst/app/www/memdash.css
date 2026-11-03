@@ -1,0 +1,51 @@
+.memdash-card-header {
+  font-weight: 600;
+}
+
+.memdash-metric {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.memdash-metric-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #3d7bfd;
+}
+
+.memdash-metric-label {
+  color: #9aa3b2;
+  font-size: 0.9rem;
+}
+
+#conn_status {
+  color: #9aa3b2;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.memdash-card-header {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.memdash-edit-btn {
+  margin-left: auto;
+  padding: 0.1rem 0.4rem;
+}
+
+.memdash-card-footer {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.memdash-card-footer .text-secondary {
+  color: #9aa3b2 !important;
+}
+
+textarea#edit_cypher, textarea#edit_params {
+  font-family: monospace;
+  font-size: 13px;
+}

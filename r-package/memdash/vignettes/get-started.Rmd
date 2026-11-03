@@ -1,0 +1,101 @@
+---
+title: "Get started with memdash"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Get started with memdash}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+memdash is a Shiny dashboard for [Memgraph](https://memgraph.com). It connects
+over **Bolt** using the official Python `neo4j` driver through **reticulate**,
+so plain openCypher works unmodified.
+
+## 1. Prerequisites
+
+```{r, eval = FALSE}
+# Python driver in the reticulate Python environment
+reticulate::py_install("neo4j")
+
+# Install this package
+devtools::install("r-package/memdash")
+```
+
+Start Memgraph, e.g.:
+
+```bash
+docker run -p 7687:7687 memgraph/memgraph
+```
+
+## 2. Launch the dashboard
+
+```{r, eval = FALSE}
+memdash::run_memdash()
+```
+
+In the app: set **Bolt URI** to `bolt://localhost:7687`, press **Connect**,
+then **Load demo data** and **Run all**. For Memgraph Enterprise
+multi-tenancy, set **Tenant database** (default `stxp4rd`).
+
+## 3. Use it in code
+
+```{r, eval = FALSE}
+library(memdash)
+
+memgraph_connect("bolt://localhost:7687", database = "stxp4rd")  # tenant DB
+memdash_seed_demo()
+
+# Metric
+res <- memgraph_query("MATCH (n) RETURN count(n) AS nodes")
+records_to_df(res$records, res$fields)
+
+# Graph card data
+res <- memgraph_query("MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50")
+g <- records_to_graph(res$records)
+length(g$nodes)  # visNetwork-ready nodes
+length(g$edges)  # visNetwork-ready edges
+
+# igraph / tidygraph layouts for graph cards
+ig <- records_to_igraph(res$records)
+coords <- igraph_layout_coords(ig, "kk")     # n x 2 fixed coordinates
+ggraph_from_records(res$records, "fr")       # static ggplot
+# In the app: set a graph card's layout to "kk", "drl", ..., or "ggraph"
+new_card(type = "graph", layout = "kk",
+         cypher = "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100")
+
+# Parameters ($limit is substituted as a quoted literal)
+memgraph_query("MATCH (p:Person) RETURN p.name AS name LIMIT $limit",
+               params = list(limit = "10"))
+
+memgraph_disconnect()
+```
+
+## 4. Build, save and share dashboards
+
+```{r, eval = FALSE}
+# Editable builder: add/edit/delete cards, per-card Run and auto-refresh
+run_memdash()
+
+# Cards are plain lists — build your own
+cards <- default_cards()
+cards[[1]] <- new_card(title = "People", type = "table",
+                       cypher = "MATCH (p:Person) RETURN p.name AS name, p.born AS born")
+
+# Persist as portable JSON (same schema as the web app)
+save_dashboard(cards, "my_dashboard.json")
+
+# Anyone with the package can recreate the dashboard
+d <- load_dashboard("my_dashboard.json")
+memdash_app(cards = d$cards)               # editable copy
+memdash_app(dashboard_file = "my_dashboard.json")  # read-only viewer
+run_memdash(read_only = TRUE)               # read-only mode for current cards
+```
+
+\code{read_only = TRUE} hides all editing controls so a second user can view and
+run the dashboard without being able to change it. It is an app-level flag —
+the JSON file itself is plain text; for real access control, keep the canonical
+file somewhere the viewer cannot write.
