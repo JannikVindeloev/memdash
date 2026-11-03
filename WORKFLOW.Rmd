@@ -1,0 +1,114 @@
+---
+title: "memdash handoff workflow: vibe code ↔ RStudio Server ↔ on-site GitLab"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE, comment = "#")
+```
+
+> This sandbox ("vibe code") **cannot reach the on-site GitLab** (firewalled).
+> All exchange happens as **`git bundle` / `git format-patch` files** moved
+> through an approved channel (file transfer, USB, ...).
+> **GitLab `main` is the source of truth.** The GitHub PR is a frozen mirror.
+>
+> Convention: vibe works on `vibe/<slug>-d02277` branches here; you merge to
+> `main` on GitLab. Bundles = full history sync; patches = small reviewable diffs.
+
+## 0. One-time setup in RStudio Server
+
+Run this **bash** chunk in the RStudio **Terminal** tab:
+
+```{bash}
+cd ~/projects                                   # wherever you keep projects
+# First time: clone from the bundle file vibe gave you
+# git clone /path/to/memdash-outgoing.bundle memdash
+cd memdash
+# Attach the on-site GitLab repo (SSH key or HTTPS + token configured once)
+git remote add gitlab https://gitlab.corp.example/<group>/memdash.git
+git push -u gitlab --all && git push -u gitlab --tags
+```
+
+Optional but recommended — pin R package versions on this machine:
+
+```{r}
+setwd("~/projects/memdash/r-package/memdash")
+renv::init()        # creates renv/ + renv.lock
+renv::snapshot()
+```
+
+## 1. vibe → you: take a new bundle / patch set
+
+Vibe produces one of these (you just transfer the file):
+
+```{bash}
+# in the vibe sandbox:
+git bundle create ~/memdash-outgoing.bundle vibe/memdash-shiny-d02277
+# or, for a small change:
+git format-patch main..vibe/memdash-shiny-d02277 -o ~/memdash-patches/
+```
+
+**In RStudio Terminal**, apply it:
+
+```{bash}
+cd ~/projects/memdash
+# bundle:
+git fetch /path/to/memdash-outgoing.bundle 'refs/heads/*:refs/remotes/incoming/*'
+git checkout -B work main
+# git merge incoming/vibe/memdash-shiny-d02277
+# patch series instead:
+# git am /path/to/memdash-patches/*.patch
+git push gitlab work:main
+```
+
+## 2. Test the R package in RStudio (R chunk)
+
+```{r}
+setwd("~/projects/memdash/r-package/memdash")
+reticulate::py_install("neo4j")   # once per Python env
+devtools::load_all()              # load without installing
+testthat::test_local()            # tests/ — no live Memgraph needed
+devtools::check()                 # full R CMD check
+# click-through against your Memgraph (tenant db defaults to stxp4rd):
+memdash::run_memdash()
+# programmatic smoke test:
+memdash::memgraph_connect("bolt://<memgraph-host>:7687", database = "stxp4rd")
+memdash::memdash_seed_demo()
+res <- memdash::memgraph_query("MATCH (n) RETURN count(n) AS nodes")
+memdash::records_to_df(res$records, res$fields)
+memdash::memgraph_disconnect()
+```
+
+If you fix something locally:
+
+```{bash}
+cd ~/projects/memdash
+git add -A && git commit -m "fix: <what>" && git push gitlab HEAD:main
+```
+
+## 3. You → vibe: send your tested state back
+
+```{bash}
+cd ~/projects/memdash
+git bundle create /path/to/memdash-incoming.bundle main     # full history
+# or: git format-patch origin/main..HEAD -o /path/to/patches/
+```
+
+Transfer the file back. Vibe then runs, in the sandbox:
+
+```{bash}
+cd /workspace/github__JannikVindeloev__memdash
+git fetch /path/to/memdash-incoming.bundle 'refs/heads/*:refs/remotes/yours/*'
+git checkout -b vibe/continue-d02277 yours/main
+# patches instead: git am /path/to/patches/*.patch
+```
+
+…develops on `vibe/continue-d02277`, and produces the next `memdash-outgoing.bundle`. Loop closed.
+
+## 4. House rules
+
+1. Never hand-edit bundle files; regenerate them with `git bundle create`.
+2. GitLab credentials live only in your credential helper / SSH — never commit tokens.
+3. Add `.Renviron` to the root `.gitignore`; R artifacts are already covered by `r-package/memdash/.gitignore`.
+4. Web app (`src/`) travels in the same bundles — run `npm install` on whichever side needs it (`node_modules` is gitignored).
+5. If both sides touched the same file, resolve on your side in RStudio and send back a bundle.
